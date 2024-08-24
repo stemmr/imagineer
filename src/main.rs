@@ -1,11 +1,13 @@
 use image::{DynamicImage, GenericImageView, Pixel};
 use std::path::Path;
+use colored::Colorize;
+use clap::Parser;
 
-struct AsciiArt {
+struct Imagineer {
     image: DynamicImage,
 }
 
-impl AsciiArt {
+impl Imagineer {
     fn new<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         match image::open(path) {
             Ok(img) => Ok(Self { image: img }),
@@ -17,16 +19,19 @@ impl AsciiArt {
         let height = self.image.height() * width / self.image.width();
         let img = self.image.resize_exact(width, height, image::imageops::FilterType::Nearest);
 
-        let mut ascii_art = String::new();
+        let mut ascii_str = String::new();
         for y in 0..img.height() {
             for x in 0..img.width() {
                 let pixel = img.get_pixel(x, y);
                 let brightness = pixel.to_luma().0[0];
-                ascii_art.push(Self::brightness_to_char(brightness));
+                let color = pixel.to_rgb();
+                let colored_char = Self::brightness_to_char(brightness)
+                    .to_string().truecolor(color.0[0], color.0[1], color.0[2]);
+                ascii_str.push_str(&format!("{}", colored_char));
             }
-            ascii_art.push('\n');
+            ascii_str.push('\n');
         }
-        ascii_art
+        ascii_str
     }
 
     fn brightness_to_char(brightness: u8) -> char {
@@ -45,9 +50,23 @@ impl AsciiArt {
     }
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(short, long, default_value = "./images/arthur.png")]
+    image_path: String,
+    #[arg(short, long, default_value = "80")]
+    width: u32,
+}
+
 
 fn main() {
-    let ascii_art = AsciiArt::new("./images/arthur.png").unwrap();
-    let ascii_art_string = ascii_art.generate(80);
-    println!("{}", ascii_art_string);
+
+    let args = Args::parse();
+
+    let image_path = args.image_path;
+    let width = args.width;
+
+    let imagineer = Imagineer::new(image_path).unwrap();
+    let imagineer_art_string = imagineer.generate(width);
+    println!("Art String: \n{}", imagineer_art_string);
 }
