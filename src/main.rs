@@ -17,7 +17,7 @@ impl Imagineer {
 
     fn generate(&self, width: u32) -> String {
         let height = self.image.height() * width / self.image.width();
-        let img = self.image.resize_exact(width, height, image::imageops::FilterType::Nearest);
+        let img = self.image.resize_exact(width, height / 2, image::imageops::FilterType::Gaussian);
 
         let mut ascii_str = String::new();
         for y in 0..img.height() {
